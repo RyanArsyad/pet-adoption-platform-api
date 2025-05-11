@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 
 const authRoutes = require("./routes/auth");
+const petsRoutes = require("./routes/pets");
 
 require("dotenv").config();
 
@@ -13,6 +14,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/pets", petsRoutes);
 
 app.use(express.static(path.join(__dirname, "pages")));
 app.use("/styles", express.static(path.join(__dirname, "styles")));
