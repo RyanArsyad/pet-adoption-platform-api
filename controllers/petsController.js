@@ -2,7 +2,7 @@ const { db } = require("../firebase");
 const dotenv = require("dotenv");
 const Pet = require("../models/petsModel");
 dotenv.config();
-
+ 
 const petsCollection = process.env.FIRESTORE_COLLECTION_PETS;
 
 exports.getAllPets = async (req, res) => {

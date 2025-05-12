@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const { db } = require("../firebase");
 const dotenv = require("dotenv");
 dotenv.config();
-
+ 
 const usersCollection = process.env.FIRESTORE_COLLECTION_USERS;
 
 exports.registerUser = async (req, res) => {

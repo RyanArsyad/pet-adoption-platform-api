@@ -10,5 +10,5 @@ class Pet {
     this.updatedAt = updatedAt || now;
   }
 }
-
+ 
 module.exports = Pet;
