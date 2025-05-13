@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/style.css" />
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Unauthorized. Please log in.");
+      window.location.href = "login.html";
+    } else {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role !== "admin") {
+        alert("Access denied. Admins only.");
+        window.location.href = "pest.html";
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <nav class="col-md-2 d-none d-md-block sidebar">
+        <a href="#pets">🐾 Manage Pets</a>
+        <a href="#requests">📋 Adoption Requests</a>
+        <a href="#" id="logoutLink" class="text-danger mt-2 d-block">🚪 Logout</a>
+      </nav>
+      <!-- Main Content -->
+      <main class="col-md-10 main-content">
+        <section id="pets">
+          <h2 class="fw-bold">Manage Pets</h2>
+          <div class="mb-3 text-end">
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#petModal">➕ Add Pet</button>
+          </div>
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Species</th>
+                <th>Age</th>
+                <th>Description</th>
+                <th>Available</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="petsTableBody">
+            </tbody>
+          </table>
+        </section>
+
+        <hr class="my-5" />
+
+        <section id="requests">
+          <h2 class="fw-bold">Adoption Requests</h2>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Adopter ID</th>
+                <th>Email</th>
+                <th>Pet ID</th>
+                <th>pet name</th>
+                <th>Status</th>
+                <th>Requested At</th>
+                <th>Updated at</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody">
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal add pet-->
+  <div class="modal fade" id="petModal" tabindex="-1" aria-labelledby="petModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="petForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="petModalLabel">Add/Edit Pet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="petId" />
+          <div class="mb-3">
+            <label for="petName" class="form-label">Pet Name</label>
+            <input type="text" class="form-control" id="petName" required />
+          </div>
+          <div class="mb-3">
+            <label for="petSpecies" class="form-label">Species</label>
+            <input type="text" class="form-control" id="petSpecies" required />
+          </div>
+          <div class="mb-3">
+            <label for="petAge" class="form-label">Age</label>
+            <input type="number" class="form-control" id="petAge" required />
+          </div>
+          <div class="mb-3">
+            <label for="petDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="petDescription" rows="3" required></textarea>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="petAvailable" />
+            <label class="form-check-label" for="petAvailable">Available</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Combined JS for Pets and Adoption Requests -->
+  <script>
+    const petForm = document.getElementById("petForm");
+    const petIdField = document.getElementById("petId");
+    const petsTableBody = document.getElementById("petsTableBody");
+    const modal = new bootstrap.Modal(document.getElementById("petModal"));
+    const requestsTableBody = document.getElementById("requestsTableBody");
+
+    // Load pets from API
+    function fetchPets() {
+      fetch("http://localhost:3000/api/pets", {
+          headers: {
+            Authorization: "Bearer " + token
+          }
+        })
+        .then(res => res.json())
+        .then(pets => {
+          petsTableBody.innerHTML = "";
+          pets.forEach(pet => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+          <td>${pet.name}</td>
+          <td>${pet.species}</td>
+          <td>${pet.age}</td>
+          <td>${pet.description}</td>
+          <td>${pet.available ? "✅" : "❌"}</td>
+          <td>
+            <button class="btn btn-warning btn-sm edit-btn" data-pet='${JSON.stringify(pet).replace(/'/g, "&apos;")}'>Edit</button>
+            <button class="btn btn-danger btn-sm delete-btn" data-id="${pet.id}">Delete</button>
+          </td>
+        `;
+            petsTableBody.appendChild(row);
+          });
+
+          document.querySelectorAll(".edit-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const pet = JSON.parse(btn.getAttribute("data-pet").replace(/&apos;/g, "'"));
+              loadPetIntoForm(pet);
+            });
+          });
+
+          document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const id = btn.getAttribute("data-id");
+              deletePet(id);
+            });
+          });
+        })
+        .catch(err => alert("Failed to load pets: " + err.message));
+    }
+
+    function loadPetIntoForm(pet) {
+      petIdField.value = pet.id || "";
+      document.getElementById("petName").value = pet.name || "";
+      document.getElementById("petSpecies").value = pet.species || "";
+      document.getElementById("petAge").value = pet.age || "";
+      document.getElementById("petDescription").value = pet.description || "";
+      document.getElementById("petAvailable").checked = pet.available || false;
+      modal.show();
+    }
+
+    function deletePet(id) {
+      if (!confirm("Are you sure you want to delete this pet?")) return;
+      fetch(`http://localhost:3000/api/pets/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: "Bearer " + token
+          }
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to delete pet.");
+          fetchPets();
+        })
+        .catch(err => alert("Error deleting pet: " + err.message));
+    }
+
+    document.querySelector('[data-bs-target="#petModal"]').addEventListener("click", () => {
+      petForm.reset();
+      petIdField.value = "";
+    });
+
+    petForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const id = petIdField.value;
+      const method = id ? "PUT" : "POST";
+      const url = id ?
+        `http://localhost:3000/api/pets/${id}` :
+        "http://localhost:3000/api/pets";
+
+      const petData = {
+        name: document.getElementById("petName").value,
+        species: document.getElementById("petSpecies").value,
+        age: parseInt(document.getElementById("petAge").value),
+        description: document.getElementById("petDescription").value,
+        available: document.getElementById("petAvailable").checked
+      };
+
+      fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
+          },
+          body: JSON.stringify(petData)
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to save pet.");
+          modal.hide();
+          fetchPets();
+          alert(id ? "Pet updated successfully!" : "Pet added successfully!");
+        })
+        .catch(err => alert("Error saving pet: " + err.message));
+    });
+
+    function fetchAdoptionRequests() {
+      fetch("http://localhost:3000/api/adoptions/admin", {
+          headers: {
+            Authorization: "Bearer " + token
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          requestsTableBody.innerHTML = "";
+          data.forEach(req => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+          <td>${req.user_id}</td>
+          <td>${req.user_email}</td>
+          <td>${req.pet_id}</td>
+          <td>${req.pet_name}</td>
+          <td><span class="badge bg-${getBadgeColor(req.status)}">${req.status}</span></td>
+          <td>${new Date(req.requestedAt).toLocaleString()}</td>
+          <td>${new Date(req.updatedAt).toLocaleString()}</td>
+          <td>
+            <button class="btn btn-success btn-sm" onclick="handleAction('${req.id}', 'approved')">Approve</button>
+            <button class="btn btn-warning btn-sm" onclick="handleAction('${req.id}', 'pending')">Pending</button>
+            <button class="btn btn-danger btn-sm" onclick="handleAction('${req.id}', 'rejected')">Reject</button>
+          </td>
+        `;
+            requestsTableBody.appendChild(row);
+          });
+        })
+        .catch(err => alert("Failed to load adoption requests: " + err.message));
+    }
+
+    function getBadgeColor(status) {
+      switch (status) {
+        case "approved":
+          return "success";
+        case "rejected":
+          return "danger";
+        case "pending":
+          return "warning";
+        default:
+          return "secondary text-dark";
+      }
+    }
+
+    function handleAction(requestId, newStatus) {
+      if (!confirm(`Are you sure to mark this request as ${newStatus}?`)) return;
+      fetch(`http://localhost:3000/api/adoptions/admin/${requestId}/status`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
+          },
+          body: JSON.stringify({
+            status: newStatus
+          })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to update status.");
+          fetchAdoptionRequests();
+        })
+        .catch(err => alert("Error updating request: " + err.message));
+    }
+
+    document.getElementById("logoutLink").addEventListener("click", function (e) {
+      e.preventDefault();
+      const confirmLogout = confirm("Are you sure you want to logout?");
+      if (confirmLogout) {
+        alert("Successfully logged out.");
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
+    });
+
+    // Initial fetch
+    fetchPets();
+    fetchAdoptionRequests();
+  </script>
+</body>
+
+</html>
