@@ -96,7 +96,7 @@
     const payload = JSON.parse(atob(token.split('.')[1]));
 
     function fetchAvailablePets() {
-      fetch("http://localhost:3000/api/pets", {
+      fetch("https://project-s4q2.et.r.appspot.com/api/pets", {
           headers: {
             Authorization: "Bearer " + token
           }
@@ -158,7 +158,7 @@
         pet_name: document.getElementById("pet_name").value
       };
 
-      fetch("http://localhost:3000/api/adoptions", {
+      fetch("https://project-s4q2.et.r.appspot.com/api/adoptions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

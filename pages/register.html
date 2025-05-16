@@ -19,7 +19,7 @@
               <h3 class="text-center mb-4">Register</h3>
               <form
                 method="post"
-                action="http://localhost:3000/api/auth/register"
+                action="#"
                 id="registerForm"
               >
                 <div class="mb-3">
@@ -106,9 +106,9 @@
           address: form.address.value,
         };
 
-        const endpoint = isAdmin
-          ? "http://localhost:3000/api/auth/register-admin"
-          : "http://localhost:3000/api/auth/register";
+          const endpoint = isAdmin
+          ? "https://project-s4q2.et.r.appspot.com/api/auth/register-admin"
+          : "https://project-s4q2.et.r.appspot.com/api/auth/register";
 
         try {
           const response = await fetch(endpoint, {

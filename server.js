@@ -19,7 +19,7 @@ app.use("/api/pets", petsRoutes);
 app.use("/api/adoptions", adoptionsRoutes);
 
 app.use(express.static(path.join(__dirname, "pages")));
-app.use("/styles", express.static(path.join(__dirname, "styles")));
+app.use(express.static(path.join(__dirname, "styles")));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
